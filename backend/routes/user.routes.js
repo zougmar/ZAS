@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import os from 'os';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import multer from 'multer';
@@ -11,12 +12,20 @@ const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
-const usersUploadDir = path.join(__dirname, '../uploads/users');
-if (!fs.existsSync(usersUploadDir)) fs.mkdirSync(usersUploadDir, { recursive: true });
+// On Vercel, filesystem is read-only except /tmp; avoid mkdirSync at load time
+const usersUploadDir = process.env.VERCEL
+  ? path.join(os.tmpdir(), 'zas-uploads', 'users')
+  : path.join(__dirname, '../uploads/users');
+if (!process.env.VERCEL && !fs.existsSync(usersUploadDir)) {
+  fs.mkdirSync(usersUploadDir, { recursive: true });
+}
 
 // Multer for user (admin) avatar uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
+    if (process.env.VERCEL) {
+      try { fs.mkdirSync(usersUploadDir, { recursive: true }); } catch (_) {}
+    }
     cb(null, usersUploadDir);
   },
   filename: (req, file, cb) => {

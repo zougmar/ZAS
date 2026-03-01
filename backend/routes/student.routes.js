@@ -1,5 +1,7 @@
 import express from 'express';
 import path from 'path';
+import os from 'os';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
 import { authenticate, authorize } from '../middleware/auth.middleware.js';
@@ -11,10 +13,18 @@ const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
+// On Vercel use /tmp (writable); locally use backend/uploads/students
+const studentsUploadDir = process.env.VERCEL
+  ? path.join(os.tmpdir(), 'zas-uploads', 'students')
+  : path.join(__dirname, '../uploads/students');
+
 // Multer config for student photo uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '../uploads/students'));
+    if (process.env.VERCEL) {
+      try { fs.mkdirSync(studentsUploadDir, { recursive: true }); } catch (_) {}
+    }
+    cb(null, studentsUploadDir);
   },
   filename: (req, file, cb) => {
     const ext = (file.mimetype.match(/\/(.+)$/) || [',jpg'])[1] || 'jpg';
