@@ -16,8 +16,8 @@ const Login = () => {
 
   useEffect(() => {
     let cancelled = false;
-    // Use /api (root) so we hit the backend even when Vercel rewrites strip the path
-    api.get('/ping').catch(() => api.get(''))
+    const pingPromise = api.get('/ping', { timeout: 5000 }).catch(() => api.get('', { timeout: 8000 }));
+    pingPromise
       .then((res) => {
         if (!cancelled && res?.data?.ok) setApiStatus(true);
         else if (!cancelled) setApiStatus(false);

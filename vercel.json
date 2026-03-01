@@ -8,6 +8,7 @@
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "functions": {
+    "api/ping.js": { "maxDuration": 5 },
     "api/index.js": { "maxDuration": 20 }
   },
   "framework": null
