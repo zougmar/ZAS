@@ -2,5 +2,9 @@
 export default function handler(req, res) {
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Access-Control-Allow-Origin', req.headers?.origin || '*');
-  res.status(200).json({ ok: true, message: 'API is reachable' });
+  res.status(200).json({
+    ok: true,
+    message: 'Deployment works',
+    status: 'API is reachable',
+  });
 }

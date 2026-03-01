@@ -35,7 +35,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use((req, res, next) => {
   const p = (req.path || req.url || '').split('?')[0];
   if (req.method === 'GET' && (p === '/api' || p === '/api/ping')) {
-    return res.json({ ok: true, message: 'API is reachable' });
+    return res.json({ ok: true, message: 'Deployment works', status: 'API is reachable' });
   }
   next();
 });
@@ -45,10 +45,10 @@ app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Ping (no DB) – must be before ensureDb; handle both /api and /api/ping for Vercel rewrites
 app.get('/api/ping', (req, res) => {
-  res.json({ ok: true, message: 'API is reachable' });
+  res.json({ ok: true, message: 'Deployment works', status: 'API is reachable' });
 });
 app.get('/api', (req, res) => {
-  res.json({ ok: true, message: 'API is reachable' });
+  res.json({ ok: true, message: 'Deployment works', status: 'API is reachable' });
 });
 
 // Database connection - expose promise for serverless so we can wait before handling
