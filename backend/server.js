@@ -54,18 +54,28 @@ const connectPromise = mongoose.connect(MONGODB_URI, {
     throw err;
   });
 
-// In serverless (Vercel), wait for DB before handling API routes
+// On Vercel: never wait longer than this for DB (avoid 504 runtime timeout)
+const DB_TIMEOUT_MS = 15000;
+const connectWithTimeout = () =>
+  Promise.race([
+    connectPromise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Database connection timeout')), DB_TIMEOUT_MS)
+    ),
+  ]);
+
+// In serverless (Vercel), wait for DB before handling API routes (with hard timeout)
 const ensureDb = async (req, res, next) => {
   if (process.env.VERCEL) {
     try {
-      await connectPromise;
+      await connectWithTimeout();
       if (mongoose.connection.readyState !== 1) {
         return res.status(503).json({ message: 'Database not ready. Please try again.' });
       }
     } catch (err) {
       console.error('DB ensure error:', err);
       return res.status(503).json({
-        message: 'Database unavailable. Check MONGODB_URI and Vercel env vars.',
+        message: 'Database unavailable. Set MONGODB_URI and JWT_SECRET in Vercel, and allow 0.0.0.0/0 in MongoDB Atlas Network Access.',
       });
     }
   }
