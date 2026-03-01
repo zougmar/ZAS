@@ -27,18 +27,43 @@ const app = express();
 
 // Middleware
 app.use(helmet());
-app.use(cors());
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Serve uploaded files (e.g. student photos)
 app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Database connection
-mongoose
-  .connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/zas')
-  .then(() => console.log('✅ MongoDB connected successfully'))
-  .catch((err) => console.error('❌ MongoDB connection error:', err));
+// Database connection - expose promise for serverless so we can wait before handling
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/zas';
+const connectPromise = mongoose.connect(MONGODB_URI)
+  .then(() => {
+    console.log('✅ MongoDB connected successfully');
+    return true;
+  })
+  .catch((err) => {
+    console.error('❌ MongoDB connection error:', err);
+    throw err;
+  });
+
+// In serverless (Vercel), wait for DB before handling API routes
+const ensureDb = async (req, res, next) => {
+  if (process.env.VERCEL) {
+    try {
+      await connectPromise;
+      if (mongoose.connection.readyState !== 1) {
+        return res.status(503).json({ message: 'Database not ready. Please try again.' });
+      }
+    } catch (err) {
+      console.error('DB ensure error:', err);
+      return res.status(503).json({
+        message: 'Database unavailable. Check MONGODB_URI and Vercel env vars.',
+      });
+    }
+  }
+  next();
+};
+app.use('/api', ensureDb);
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -77,9 +102,15 @@ const PORT = process.env.PORT || 5000;
 
 // Only start listening when not on Vercel (serverless)
 if (!process.env.VERCEL) {
-  app.listen(PORT, () => {
-    console.log(`🚀 ZAS Server running on port ${PORT}`);
+  connectPromise.then(() => {
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => {
+      console.log(`🚀 ZAS Server running on port ${PORT}`);
+    });
+  }).catch((err) => {
+    console.error('Cannot start server:', err);
   });
 }
 
 export default app;
+export { connectPromise };

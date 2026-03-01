@@ -215,6 +215,23 @@ Your app will be live at `https://your-project.vercel.app`. The frontend uses `/
 - **File uploads**: Profile/student photos uploaded on Vercel are stored in the serverless function’s temporary filesystem and are **not persistent**. For production, consider using [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) or another storage service.
 - **MongoDB**: Use [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) (or another hosted MongoDB) and set `MONGODB_URI` in Vercel.
 
+### If login returns 500 or "Login failed"
+1. **Environment variables**  
+   In Vercel → Project → **Settings → Environment Variables**, set for **Production** (and Preview if you use it):
+   - `MONGODB_URI` – your MongoDB Atlas connection string (e.g. `mongodb+srv://user:pass@cluster.mongodb.net/zas`)
+   - `JWT_SECRET` – any long random string (e.g. 32+ characters). If this is missing, the API returns 503 with a message about JWT_SECRET.
+
+2. **MongoDB Atlas network access**  
+   In [MongoDB Atlas](https://cloud.mongodb.com) → your project → **Network Access** → **Add IP Address** → choose **Allow Access from Anywhere** (`0.0.0.0/0`). Otherwise Vercel’s servers cannot connect to Atlas.
+
+3. **Redeploy**  
+   After changing env vars or Atlas, trigger a new deployment (Deployments → … → Redeploy).
+
+4. **Check function logs**  
+   In Vercel → Project → **Logs** (or **Deployments** → open a deployment → **Functions**), look at the serverless function logs for the real error (e.g. MongoDB connection error or JWT_SECRET).
+
+The browser console messages like "message port closed", "disconnected port object", or "Receiving end does not exist" come from **browser extensions** (e.g. password managers, React DevTools), not from your app. Ignore those; the real error is the **500 on `api/auth/login`**, which the steps above address.
+
 ## 🔑 Default Credentials
 
 After seeding the database, you can login with:

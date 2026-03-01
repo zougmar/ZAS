@@ -6,7 +6,11 @@ import Parent from '../models/Parent.model.js';
 
 // Generate JWT token
 const generateToken = (userId) => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET is not configured. Set it in Vercel Environment Variables.');
+  }
+  return jwt.sign({ userId }, secret, { expiresIn: '7d' });
 };
 
 // Register new user
@@ -113,7 +117,9 @@ export const login = async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ message: error.message || 'Login failed' });
+    const message = error.message || 'Login failed';
+    const code = error.message && error.message.includes('JWT_SECRET') ? 503 : 500;
+    res.status(code).json({ message });
   }
 };
 
