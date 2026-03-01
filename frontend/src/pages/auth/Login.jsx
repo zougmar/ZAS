@@ -1,32 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { GraduationCap, Wifi, WifiOff } from 'lucide-react';
-import toast from 'react-hot-toast';
-import api from '../../utils/api';
+import { GraduationCap } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
-  const [apiStatus, setApiStatus] = useState(null);
   const { login } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    let cancelled = false;
-    const pingPromise = api.get('/ping', { timeout: 5000 }).catch(() => api.get('', { timeout: 8000 }));
-    pingPromise
-      .then((res) => {
-        if (!cancelled && res?.data?.ok) setApiStatus(true);
-        else if (!cancelled) setApiStatus(false);
-      })
-      .catch(() => {
-        if (!cancelled) setApiStatus(false);
-      });
-    return () => { cancelled = true; };
-  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -55,13 +38,6 @@ const Login = () => {
             </div>
             <h1 className="text-3xl font-bold text-gray-900">Zouglah Academic System</h1>
             <p className="text-gray-600 mt-2">Sign in to your account</p>
-            {/* API connection status */}
-            {apiStatus !== null && (
-              <p className={`mt-2 text-xs flex items-center justify-center gap-1 ${apiStatus ? 'text-green-600' : 'text-amber-600'}`}>
-                {apiStatus ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}
-                {apiStatus ? 'API connected' : 'API not reachable – check backend and Vercel rewrites'}
-              </p>
-            )}
           </div>
 
           {/* Login Form */}
