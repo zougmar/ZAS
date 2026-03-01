@@ -51,26 +51,35 @@ app.get('/api', (req, res) => {
   res.json({ ok: true, message: 'Deployment works', status: 'API is reachable' });
 });
 
-// Database connection - expose promise for serverless so we can wait before handling
+// Database connection – lazy on Vercel so cold start doesn't wait for Atlas
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/zas';
-// Keep under Vercel Hobby 10s limit: fail DB quickly so we return 503, not 504
-const DB_TIMEOUT_MS = 8000;
-const MONGO_OPTS = { serverSelectionTimeoutMS: 5000, connectTimeoutMS: 5000 };
+const DB_TIMEOUT_MS = 10000; // Fail fast: 503 after 10s, never burn 60s
+const MONGO_OPTS = {
+  serverSelectionTimeoutMS: DB_TIMEOUT_MS,
+  connectTimeoutMS: DB_TIMEOUT_MS,
+};
 
-const connectPromise = mongoose.connect(MONGODB_URI, MONGO_OPTS)
-  .then(() => {
-    console.log('✅ MongoDB connected successfully');
-    return true;
-  })
-  .catch((err) => {
-    console.error('❌ MongoDB connection error:', err);
-    throw err;
-  });
+let connectPromise = null;
+const getConnectPromise = () => {
+  if (!connectPromise) {
+    connectPromise = mongoose.connect(MONGODB_URI, MONGO_OPTS)
+      .then(() => {
+        console.log('✅ MongoDB connected successfully');
+        return true;
+      })
+      .catch((err) => {
+        console.error('❌ MongoDB connection error:', err);
+        connectPromise = null; // Allow retry on next request
+        throw err;
+      });
+  }
+  return connectPromise;
+};
 
 // On Vercel: never wait longer than DB_TIMEOUT_MS for DB (avoid 504)
 const connectWithTimeout = () =>
   Promise.race([
-    connectPromise,
+    getConnectPromise(),
     new Promise((_, reject) =>
       setTimeout(() => reject(new Error('Database connection timeout')), DB_TIMEOUT_MS)
     ),
@@ -92,8 +101,11 @@ const ensureDb = async (req, res, next) => {
       }
     } catch (err) {
       console.error('DB ensure error:', err);
+      const isTimeout = err.message && err.message.includes('timeout');
       return res.status(503).json({
-        message: 'Database unavailable. Set MONGODB_URI and JWT_SECRET in Vercel, and allow 0.0.0.0/0 in MongoDB Atlas Network Access.',
+        message: isTimeout
+          ? 'Database connection timed out (10s). Check MongoDB Atlas: use a region close to Vercel, allow 0.0.0.0/0 in Network Access, and set MONGODB_URI + JWT_SECRET in Vercel.',
+          : 'Database unavailable. Set MONGODB_URI and JWT_SECRET in Vercel, and allow 0.0.0.0/0 in MongoDB Atlas Network Access.',
       });
     }
   }
@@ -138,7 +150,7 @@ const PORT = process.env.PORT || 5000;
 
 // Only start listening when not on Vercel (serverless)
 if (!process.env.VERCEL) {
-  connectPromise.then(() => {
+  getConnectPromise().then(() => {
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => {
       console.log(`🚀 ZAS Server running on port ${PORT}`);
@@ -149,4 +161,4 @@ if (!process.env.VERCEL) {
 }
 
 export default app;
-export { connectPromise };
+export { getConnectPromise };
