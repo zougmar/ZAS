@@ -41,10 +41,11 @@ app.get('/api/ping', (req, res) => {
 
 // Database connection - expose promise for serverless so we can wait before handling
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/zas';
-const connectPromise = mongoose.connect(MONGODB_URI, {
-  serverSelectionTimeoutMS: 10000,
-  connectTimeoutMS: 10000,
-})
+// Keep under Vercel Hobby 10s limit: fail DB quickly so we return 503, not 504
+const DB_TIMEOUT_MS = 8000;
+const MONGO_OPTS = { serverSelectionTimeoutMS: 5000, connectTimeoutMS: 5000 };
+
+const connectPromise = mongoose.connect(MONGODB_URI, MONGO_OPTS)
   .then(() => {
     console.log('✅ MongoDB connected successfully');
     return true;
@@ -54,8 +55,7 @@ const connectPromise = mongoose.connect(MONGODB_URI, {
     throw err;
   });
 
-// On Vercel: never wait longer than this for DB (avoid 504 runtime timeout)
-const DB_TIMEOUT_MS = 15000;
+// On Vercel: never wait longer than DB_TIMEOUT_MS for DB (avoid 504)
 const connectWithTimeout = () =>
   Promise.race([
     connectPromise,
@@ -67,6 +67,12 @@ const connectWithTimeout = () =>
 // In serverless (Vercel), wait for DB before handling API routes (with hard timeout)
 const ensureDb = async (req, res, next) => {
   if (process.env.VERCEL) {
+    // Fail immediately if DB not configured (avoid 504)
+    if (!process.env.MONGODB_URI || process.env.MONGODB_URI.includes('localhost')) {
+      return res.status(503).json({
+        message: 'Database not configured. In Vercel: set MONGODB_URI (MongoDB Atlas) and JWT_SECRET in Settings → Environment Variables, then redeploy.',
+      });
+    }
     try {
       await connectWithTimeout();
       if (mongoose.connection.readyState !== 1) {

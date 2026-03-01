@@ -55,16 +55,19 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       const msg = error.response?.data?.message || error.message || 'Login failed';
       const status = error.response?.status;
+      const is504 = status === 504;
       const isTimeout = error.code === 'ECONNABORTED' || error.message?.includes('timeout');
-      const hint = isTimeout
-        ? ' The server took too long to respond. On Vercel, check MONGODB_URI and JWT_SECRET, and allow 0.0.0.0/0 in MongoDB Atlas Network Access.'
-        : !error.response
-          ? ' (Network error – check if the API is reachable)'
-          : status === 503
-            ? ' Check Vercel: MONGODB_URI, JWT_SECRET, and MongoDB Atlas Network Access (allow 0.0.0.0/0).'
-            : status >= 500
-              ? ' Check Vercel Function logs and env vars.'
-              : '';
+      const hint = is504
+        ? ' Server timed out. In Vercel set MONGODB_URI and JWT_SECRET (Settings → Environment Variables), allow 0.0.0.0/0 in MongoDB Atlas Network Access, then redeploy.'
+        : isTimeout
+          ? ' The server took too long. On Vercel, check MONGODB_URI, JWT_SECRET, and Atlas Network Access (0.0.0.0/0).'
+          : !error.response
+            ? ' (Network error – check if the API is reachable)'
+            : status === 503
+              ? ' Check Vercel: MONGODB_URI, JWT_SECRET, and MongoDB Atlas Network Access (allow 0.0.0.0/0).'
+              : status >= 500
+                ? ' Check Vercel Function logs and env vars.'
+                : '';
       toast.error(msg + hint);
       throw error;
     }
