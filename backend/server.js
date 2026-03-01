@@ -82,7 +82,7 @@ const connectWithTimeout = () =>
     getConnectPromise(),
     new Promise((_, reject) =>
       setTimeout(() => reject(new Error('Database connection timeout')), DB_TIMEOUT_MS)
-    ),
+    )
   ]);
 
 // In serverless (Vercel), wait for DB before handling API routes (with hard timeout)
@@ -104,7 +104,7 @@ const ensureDb = async (req, res, next) => {
       const isTimeout = err.message && err.message.includes('timeout');
       return res.status(503).json({
         message: isTimeout
-          ? 'Database connection timed out (10s). Check MongoDB Atlas: use a region close to Vercel, allow 0.0.0.0/0 in Network Access, and set MONGODB_URI + JWT_SECRET in Vercel.',
+          ? 'Database connection timed out (10s). Check MongoDB Atlas: use a region close to Vercel, allow 0.0.0.0/0 in Network Access, and set MONGODB_URI + JWT_SECRET in Vercel.'
           : 'Database unavailable. Set MONGODB_URI and JWT_SECRET in Vercel, and allow 0.0.0.0/0 in MongoDB Atlas Network Access.',
       });
     }
