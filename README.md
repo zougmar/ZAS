@@ -10,6 +10,7 @@ A comprehensive full-stack academic management system built with the MERN stack 
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Running the Application](#running-the-application)
+- [Deploy on Vercel](#deploy-on-vercel)
 - [Default Credentials](#default-credentials)
 - [API Endpoints](#api-endpoints)
 - [Branding & Logo](#branding--logo)
@@ -173,6 +174,46 @@ The frontend will run on `http://localhost:3000`
 
 ### 5. Access the Application
 Open your browser and navigate to `http://localhost:3000`
+
+## ▲ Deploy on Vercel
+
+You can deploy ZAS (frontend + API) to [Vercel](https://vercel.com) in one project.
+
+### 1. Push your code to GitHub
+Ensure the repo is on GitHub (or GitLab/Bitbucket).
+
+### 2. Import the project on Vercel
+1. Go to [vercel.com/new](https://vercel.com/new)
+2. Import your repository
+3. **Root Directory**: leave as the repo root (do not set to `frontend`)
+4. Vercel will use the root `vercel.json`; no need to change Framework Preset (or set to Other)
+
+### 3. Environment variables
+In the Vercel project **Settings → Environment Variables**, add:
+
+| Name | Value | Notes |
+|------|--------|--------|
+| `MONGODB_URI` | `mongodb+srv://...` | Your MongoDB Atlas (or other) connection string |
+| `JWT_SECRET` | A long random string | Use a strong secret for production |
+
+Optional:
+
+| Name | Value |
+|------|--------|
+| `NODE_ENV` | `production` |
+
+### 4. Deploy
+Click **Deploy**. Vercel will:
+
+- Run `npm install` (root) and `cd backend && npm install`
+- Run `cd frontend && npm install && npm run build`
+- Serve the frontend from `frontend/dist` and route `/api/*` to the Node API
+
+Your app will be live at `https://your-project.vercel.app`. The frontend uses `/api` as the API base URL, so it will work on the same domain.
+
+### Notes
+- **File uploads**: Profile/student photos uploaded on Vercel are stored in the serverless function’s temporary filesystem and are **not persistent**. For production, consider using [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) or another storage service.
+- **MongoDB**: Use [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) (or another hosted MongoDB) and set `MONGODB_URI` in Vercel.
 
 ## 🔑 Default Credentials
 

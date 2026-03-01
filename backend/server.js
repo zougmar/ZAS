@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
 import studentRoutes from './routes/student.routes.js';
@@ -16,6 +18,9 @@ import timetableRoutes from './routes/timetable.routes.js';
 import messageRoutes from './routes/message.routes.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 dotenv.config();
 
 const app = express();
@@ -25,6 +30,9 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve uploaded files (e.g. student photos)
+app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Database connection
 mongoose
@@ -67,6 +75,11 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`🚀 ZAS Server running on port ${PORT}`);
-});
+// Only start listening when not on Vercel (serverless)
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🚀 ZAS Server running on port ${PORT}`);
+  });
+}
+
+export default app;

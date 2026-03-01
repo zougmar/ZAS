@@ -7,6 +7,7 @@ import { Send, Plus } from 'lucide-react';
 
 const Messages = () => {
   const { user } = useAuth();
+  const userId = user?.id ?? user?._id;
   const [messages, setMessages] = useState([]);
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -15,13 +16,15 @@ const Messages = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!userId) return;
     fetchMessages();
     fetchUsers();
-  }, []);
+  }, [userId]);
 
   const fetchMessages = async () => {
+    if (!userId) return;
     try {
-      const response = await api.get(`/messages/${user.id}`);
+      const response = await api.get(`/messages/${userId}`);
       setMessages(response.data);
     } catch (error) {
       console.error('Failed to fetch messages:', error);
@@ -32,21 +35,18 @@ const Messages = () => {
   };
 
   const fetchUsers = async () => {
+    if (!userId) return;
     try {
-      // Try the messaging-specific endpoint first, fallback to regular users endpoint
       let response;
       try {
         response = await api.get('/users/for-messaging');
       } catch (err) {
-        // Fallback to regular users endpoint (admin only)
         response = await api.get('/users');
       }
-      
-      // Filter out current user and format users
       const filtered = response.data
-        .filter((u) => String(u.id || u._id) !== String(user.id))
+        .filter((u) => String(u.id || u._id) !== String(userId))
         .map((u) => ({
-          id: u.id || u._id,
+          id: String(u.id || u._id),
           name: u.name,
           email: u.email,
           role: u.role,
@@ -61,21 +61,23 @@ const Messages = () => {
 
   const sendMessage = async (e) => {
     e.preventDefault();
-    if (!selectedUser || !newMessage.trim()) {
+    const recipientId = selectedUser ? String(selectedUser) : null;
+    if (!recipientId || !newMessage.trim()) {
       toast.error('Please select a recipient and enter a message');
       return;
     }
 
     try {
       await api.post('/messages', {
-        receiver: selectedUser,
+        receiver: recipientId,
         message: newMessage.trim(),
       });
       toast.success('Message sent successfully');
       setNewMessage('');
       setShowCompose(false);
-      setSelectedUser(null);
-      fetchMessages();
+      // Keep the recipient selected so the new conversation opens
+      setSelectedUser(recipientId);
+      await fetchMessages();
     } catch (error) {
       console.error('Failed to send message:', error);
       toast.error(error.response?.data?.message || 'Failed to send message');
@@ -95,8 +97,8 @@ const Messages = () => {
     return messages
       .filter(
         (m) =>
-          (String(m.sender._id) === String(otherUserId) && String(m.receiver._id) === String(user.id)) ||
-          (String(m.sender._id) === String(user.id) && String(m.receiver._id) === String(otherUserId))
+          (String(m.sender._id) === String(otherUserId) && String(m.receiver._id) === String(userId)) ||
+          (String(m.sender._id) === String(userId) && String(m.receiver._id) === String(otherUserId))
       )
       .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
   };
@@ -104,10 +106,10 @@ const Messages = () => {
   const getConversationPartners = () => {
     const partners = new Set();
     messages.forEach((m) => {
-      if (String(m.sender._id) !== String(user.id)) {
+      if (String(m.sender._id) !== String(userId)) {
         partners.add(String(m.sender._id));
       }
-      if (String(m.receiver._id) !== String(user.id)) {
+      if (String(m.receiver._id) !== String(userId)) {
         partners.add(String(m.receiver._id));
       }
     });
@@ -138,7 +140,11 @@ const Messages = () => {
           {/* Conversations List */}
           <div className="lg:col-span-1 card">
             <h2 className="text-lg font-semibold mb-4">Conversations</h2>
-            {loading ? (
+            {!userId ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
+              </div>
+            ) : loading ? (
               <div className="flex justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
               </div>
@@ -150,7 +156,7 @@ const Messages = () => {
                   const conversation = getConversation(partner._id);
                   const lastMessage = conversation[conversation.length - 1];
                   const unreadCount = conversation.filter(
-                    (m) => !m.isRead && String(m.receiver._id) === String(user.id)
+                    (m) => !m.isRead && String(m.receiver._id) === String(userId)
                   ).length;
 
                   return (
@@ -189,7 +195,7 @@ const Messages = () => {
               <>
                 <div className="flex-1 overflow-y-auto space-y-4 mb-4">
                   {getConversation(selectedUser).map((message) => {
-                    const isSender = String(message.sender._id) === String(user.id);
+                    const isSender = String(message.sender._id) === String(userId);
                     if (!isSender && !message.isRead) {
                       markAsRead(message._id);
                     }
@@ -249,8 +255,8 @@ const Messages = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">To</label>
                   <select
-                    value={selectedUser || ''}
-                    onChange={(e) => setSelectedUser(e.target.value)}
+                    value={selectedUser ? String(selectedUser) : ''}
+                    onChange={(e) => setSelectedUser(e.target.value || null)}
                     required
                     className="input"
                   >
@@ -281,7 +287,6 @@ const Messages = () => {
                     type="button"
                     onClick={() => {
                       setShowCompose(false);
-                      setSelectedUser(null);
                       setNewMessage('');
                     }}
                     className="flex-1 btn btn-outline"

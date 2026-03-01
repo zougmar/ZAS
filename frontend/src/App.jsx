@@ -12,11 +12,14 @@ import AdminClasses from './pages/admin/Classes';
 import AdminSubjects from './pages/admin/Subjects';
 import AdminAttendance from './pages/admin/Attendance';
 import AdminGrades from './pages/admin/Grades';
+import AdminProfile from './pages/admin/Profile';
 import TeacherDashboard from './pages/teacher/Dashboard';
+import TeacherProfile from './pages/teacher/Profile';
 import TeacherAttendance from './pages/teacher/Attendance';
 import TeacherGrades from './pages/teacher/Grades';
 import TeacherTimetable from './pages/teacher/Timetable';
 import StudentDashboard from './pages/student/Dashboard';
+import StudentProfile from './pages/student/Profile';
 import StudentGrades from './pages/student/Grades';
 import StudentAttendance from './pages/student/Attendance';
 import StudentTimetable from './pages/student/Timetable';
@@ -97,6 +100,14 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/admin/profile"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminProfile />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Teacher Routes */}
         <Route
@@ -131,6 +142,14 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/teacher/profile"
+          element={
+            <ProtectedRoute allowedRoles={['teacher']}>
+              <TeacherProfile />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Student Routes */}
         <Route
@@ -162,6 +181,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={['student']}>
               <StudentTimetable />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/profile"
+          element={
+            <ProtectedRoute allowedRoles={['student']}>
+              <StudentProfile />
             </ProtectedRoute>
           }
         />

@@ -21,6 +21,10 @@ const teacherSchema = new mongoose.Schema(
       unique: true,
       sparse: true,
     },
+    photo: {
+      type: String,
+      default: '',
+    },
   },
   {
     timestamps: true,

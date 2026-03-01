@@ -1,4 +1,4 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
   LayoutDashboard,
@@ -17,7 +17,6 @@ import {
 const Sidebar = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
@@ -76,6 +75,59 @@ const Sidebar = () => {
     }
   };
 
+  const profilePath = user?.role ? `/${user.role}/profile` : null;
+  const hasProfilePage = ['admin', 'teacher', 'student'].includes(user?.role);
+
+  // Profile image: student/teacher use profile.photo; admin uses user.photo
+  const avatarPhoto = user?.profile?.photo ?? user?.photo;
+  const avatarInitial = user?.name?.trim().charAt(0).toUpperCase() || '?';
+  const avatarUrl = avatarPhoto?.startsWith('http')
+    ? avatarPhoto
+    : avatarPhoto
+      ? `${window.location.origin}${avatarPhoto.startsWith('/') ? '' : '/'}${avatarPhoto}`
+      : null;
+
+  const AvatarBlock = ({ asLink = false, showSubtitleAsProfile = false }) => {
+    const content = (
+      <>
+        <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center shrink-0 overflow-hidden">
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt={user?.name}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <span className="text-primary-600 font-semibold">{avatarInitial}</span>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-gray-900 truncate">{user?.name}</p>
+          <p className="text-xs text-gray-500 capitalize">
+            {showSubtitleAsProfile ? 'My Profile' : user?.role}
+          </p>
+        </div>
+      </>
+    );
+    if (asLink && profilePath) {
+      return (
+        <Link
+          to={profilePath}
+          className={`flex items-center space-x-3 mb-3 px-4 py-2 rounded-lg transition-colors ${
+            isActive(profilePath) ? 'bg-primary-100 text-primary-700' : 'hover:bg-gray-100'
+          }`}
+        >
+          {content}
+        </Link>
+      );
+    }
+    return (
+      <div className="flex items-center space-x-3 mb-3 px-4 py-2">
+        {content}
+      </div>
+    );
+  };
+
   return (
     <div className="w-64 bg-white shadow-lg flex flex-col">
       {/* Logo */}
@@ -113,19 +165,13 @@ const Sidebar = () => {
         </ul>
       </nav>
 
-      {/* User Info & Logout */}
+      {/* User Info (clickable → Profile) & Logout */}
       <div className="p-4 border-t">
-        <div className="flex items-center space-x-3 mb-3 px-4 py-2">
-          <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
-            <span className="text-primary-600 font-semibold">
-              {user?.name?.charAt(0).toUpperCase()}
-            </span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">{user?.name}</p>
-            <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
-          </div>
-        </div>
+        {hasProfilePage && profilePath ? (
+          <AvatarBlock asLink showSubtitleAsProfile />
+        ) : (
+          <AvatarBlock />
+        )}
         <button
           onClick={handleLogout}
           className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"

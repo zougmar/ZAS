@@ -107,6 +107,7 @@ export const login = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        photo: user.photo || '',
         profile,
       },
     });
@@ -142,6 +143,7 @@ export const getCurrentUser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        photo: user.photo || '',
         profile,
       },
     });

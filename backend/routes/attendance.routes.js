@@ -20,7 +20,7 @@ router.post('/', authenticate, authorize('teacher', 'admin'), async (req, res) =
       await existing.save();
 
       const populated = await Attendance.findById(existing._id)
-        .populate('student', 'user class')
+        .populate('student', 'user class photo')
         .populate({ path: 'student', populate: { path: 'user', select: 'name email' } })
         .populate('markedBy', 'user')
         .populate({ path: 'markedBy', populate: { path: 'user', select: 'name email' } });
@@ -37,7 +37,7 @@ router.post('/', authenticate, authorize('teacher', 'admin'), async (req, res) =
     });
 
     const populated = await Attendance.findById(attendance._id)
-      .populate('student', 'user class')
+      .populate('student', 'user class photo')
       .populate({ path: 'student', populate: { path: 'user', select: 'name email' } })
       .populate('markedBy', 'user')
       .populate({ path: 'markedBy', populate: { path: 'user', select: 'name email' } });
@@ -63,7 +63,7 @@ router.get('/class/:classId', authenticate, async (req, res) => {
         student: { $in: students.map((s) => s._id) },
         date: new Date(date),
       })
-        .populate('student', 'user class')
+        .populate('student', 'user class photo')
         .populate({ path: 'student', populate: { path: 'user', select: 'name email' } })
         .populate('markedBy', 'user')
         .populate({ path: 'markedBy', populate: { path: 'user', select: 'name email' } });
@@ -74,7 +74,7 @@ router.get('/class/:classId', authenticate, async (req, res) => {
       const attendance = await Attendance.find({
         student: { $in: students.map((s) => s._id) },
       })
-        .populate('student', 'user class')
+        .populate('student', 'user class photo')
         .populate({ path: 'student', populate: { path: 'user', select: 'name email' } })
         .populate('markedBy', 'user')
         .populate({ path: 'markedBy', populate: { path: 'user', select: 'name email' } })
@@ -106,7 +106,7 @@ router.get('/student/:studentId', authenticate, async (req, res) => {
     }
 
     const attendance = await Attendance.find({ student: studentId })
-      .populate('student', 'user class')
+      .populate('student', 'user class photo')
       .populate({ path: 'student', populate: { path: 'user', select: 'name email' } })
       .populate('markedBy', 'user')
       .populate({ path: 'markedBy', populate: { path: 'user', select: 'name email' } })
