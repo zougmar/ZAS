@@ -8,19 +8,21 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loginError, setLoginError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setLoginError('');
 
     try {
       const user = await login(email, password);
-      // Navigate based on role
       navigate(`/${user.role}/dashboard`);
     } catch (error) {
-      // Error handled in AuthContext
+      const msg = error.response?.data?.message || error.message || 'Login failed';
+      setLoginError(msg);
     } finally {
       setLoading(false);
     }
@@ -78,6 +80,11 @@ const Login = () => {
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
+            {loginError && (
+              <p className="text-sm text-red-600 mt-2 text-center" role="alert">
+                {loginError}
+              </p>
+            )}
           </form>
 
           <div className="mt-6 text-center">
