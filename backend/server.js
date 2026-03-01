@@ -41,7 +41,10 @@ app.get('/api/ping', (req, res) => {
 
 // Database connection - expose promise for serverless so we can wait before handling
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/zas';
-const connectPromise = mongoose.connect(MONGODB_URI)
+const connectPromise = mongoose.connect(MONGODB_URI, {
+  serverSelectionTimeoutMS: 10000,
+  connectTimeoutMS: 10000,
+})
   .then(() => {
     console.log('✅ MongoDB connected successfully');
     return true;
