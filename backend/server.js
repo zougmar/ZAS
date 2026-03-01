@@ -31,11 +31,23 @@ app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Ping immediately (no DB) – before any heavy work so /api/ping never 504
+app.use((req, res, next) => {
+  const p = (req.path || req.url || '').split('?')[0];
+  if (req.method === 'GET' && (p === '/api' || p === '/api/ping')) {
+    return res.json({ ok: true, message: 'API is reachable' });
+  }
+  next();
+});
+
 // Serve uploaded files (e.g. student photos)
 app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Ping (no DB) – use to check if API is reachable on Vercel
+// Ping (no DB) – must be before ensureDb; handle both /api and /api/ping for Vercel rewrites
 app.get('/api/ping', (req, res) => {
+  res.json({ ok: true, message: 'API is reachable' });
+});
+app.get('/api', (req, res) => {
   res.json({ ok: true, message: 'API is reachable' });
 });
 
