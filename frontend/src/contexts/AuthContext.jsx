@@ -44,7 +44,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await api.post('/auth/login', { email, password }, { timeout: 12000 });
+      const response = await api.post('/auth/login', { email, password }, { timeout: 35000 });
       const { token, user: u } = response.data;
       const user = u ? { ...u, id: u.id ?? u._id } : null;
       localStorage.setItem('token', token);
@@ -60,7 +60,7 @@ export const AuthProvider = ({ children }) => {
       const hint = is504
         ? ' Server timed out. In Vercel set MONGODB_URI and JWT_SECRET (Settings → Environment Variables), allow 0.0.0.0/0 in MongoDB Atlas Network Access, then redeploy.'
         : isTimeout
-          ? ' The server took too long. On Vercel, check MONGODB_URI, JWT_SECRET, and Atlas Network Access (0.0.0.0/0).'
+          ? ' The server may be waking up (cold start). Please try again in a few seconds. If it keeps failing, check Vercel: MONGODB_URI, JWT_SECRET, and Atlas Network Access (0.0.0.0/0).'
           : !error.response
             ? ' (Network error – check if the API is reachable)'
             : status === 503
