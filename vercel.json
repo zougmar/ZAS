@@ -9,7 +9,7 @@
   ],
   "functions": {
     "api/ping.js": { "maxDuration": 5 },
-    "api/index.js": { "maxDuration": 20 }
+    "api/index.js": { "maxDuration": 60 }
   },
   "framework": null
 }
