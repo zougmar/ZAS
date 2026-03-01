@@ -34,6 +34,11 @@ app.use(express.urlencoded({ extended: true }));
 // Serve uploaded files (e.g. student photos)
 app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Ping (no DB) – use to check if API is reachable on Vercel
+app.get('/api/ping', (req, res) => {
+  res.json({ ok: true, message: 'API is reachable' });
+});
+
 // Database connection - expose promise for serverless so we can wait before handling
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/zas';
 const connectPromise = mongoose.connect(MONGODB_URI)

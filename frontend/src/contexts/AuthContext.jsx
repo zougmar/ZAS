@@ -54,7 +54,15 @@ export const AuthProvider = ({ children }) => {
       return user;
     } catch (error) {
       const msg = error.response?.data?.message || error.message || 'Login failed';
-      toast.error(msg);
+      const status = error.response?.status;
+      const hint = !error.response
+        ? ' (Network error – check if the site is deployed and API is reachable)'
+        : status === 503
+          ? ' Check Vercel: MONGODB_URI, JWT_SECRET, and MongoDB Atlas Network Access (allow 0.0.0.0/0).'
+          : status >= 500
+            ? ' Check Vercel Function logs and env vars.'
+            : '';
+      toast.error(msg + hint);
       throw error;
     }
   };
