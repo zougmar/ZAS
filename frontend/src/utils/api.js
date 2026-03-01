@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+// Same origin on Vercel (/api); override with VITE_API_URL if frontend and backend are split
+const baseURL = import.meta.env.VITE_API_URL || '/api';
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL,
   timeout: 25000,
   headers: {
     'Content-Type': 'application/json',
