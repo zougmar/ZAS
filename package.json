@@ -3,6 +3,10 @@
   "private": true,
   "type": "module",
   "description": "Zouglah Academic System - deploy root for Vercel",
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build",
+    "vercel-build": "npm run build"
+  },
   "dependencies": {
     "serverless-http": "^3.2.0"
   }

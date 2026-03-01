@@ -8,6 +8,7 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    // Dev only: proxy /api to local backend. Production uses same-origin /api on Vercel.
     proxy: {
       '/api': {
         target: 'http://localhost:5000',
